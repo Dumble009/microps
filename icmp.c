@@ -99,7 +99,7 @@ void icmp_input(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, s
     }
 
     hdr = (struct icmp_hdr *)data;
-    uint16_t checksum = cksum16((uint16_t *)hdr, ICMP_HDR_SIZE, 0);
+    uint16_t checksum = cksum16((uint16_t *)data, len, 0);
     if (checksum != 0)
     {
         errorf("failured check sum verification. cksum=%d", checksum);
