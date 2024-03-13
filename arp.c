@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
 #include <sys/time.h>
 
 #include "platform.h"
@@ -192,6 +195,11 @@ arp_cache_insert(ip_addr_t pa, const uint8_t *ha)
     gettimeofday(&cache->timestamp, NULL);
     debugf("INSERT: pa=%s, ha=%s", ip_addr_ntop(pa, addr1, sizeof(addr1)), ip_addr_ntop(pa, addr2, sizeof(addr2)));
     return cache;
+}
+
+static int
+arp_request(struct net_iface *iface, ip_addr_t tpa)
+{
 }
 
 static int
