@@ -174,6 +174,8 @@ arp_cache_update(ip_addr_t pa, const uint8_t *ha)
     cache->pa = pa;
     gettimeofday(&cache->timestamp, NULL);
     debugf("UPDATE: pa=%s, ha=%s", ip_addr_ntop(pa, addr1, sizeof(addr1)), ether_addr_ntop(ha, addr2, sizeof(addr2)));
+
+    return cache;
 }
 
 static struct arp_cache *
@@ -200,6 +202,22 @@ arp_cache_insert(ip_addr_t pa, const uint8_t *ha)
 static int
 arp_request(struct net_iface *iface, ip_addr_t tpa)
 {
+    struct arp_ether_ip request;
+    request.hdr.hrd = hton16(ARP_HRD_ETHER);
+    request.hdr.pro = hton16(ARP_PRO_IP);
+    request.hdr.hln = ETHER_ADDR_LEN;
+    request.hdr.pln = IP_ADDR_LEN;
+    request.hdr.op = hton16(ARP_OP_REQUEST);
+
+    memcpy(request.sha, iface->dev->addr, ETHER_ADDR_LEN);
+    memcpy(request.spa, &((struct ip_iface *)iface)->unicast, IP_ADDR_LEN);
+    memset(request.tha, 0, ETHER_ADDR_LEN);
+    memcpy(request.tpa, &tpa, IP_ADDR_LEN);
+
+    debugf("dev=%s, len=%zu", iface->dev->name, sizeof(request));
+    arp_dump((uint8_t *)&request, sizeof(request));
+
+    return net_device_output(iface->dev, ETHER_TYPE_ARP, (uint8_t *)&request, sizeof(request), &ETHER_ADDR_BROADCAST);
 }
 
 static int
@@ -246,9 +264,31 @@ int arp_resolve(struct net_iface *iface, ip_addr_t pa, uint8_t *ha)
     if (!cache)
     {
         debugf("cache not found, pa=%s", ip_addr_ntop(pa, addr1, sizeof(addr1)));
+
+        cache = arp_cache_alloc();
+        if (!cache)
+        {
+            errorf("failed to alloc arp entry");
+            return ARP_RESOLVE_ERROR;
+        }
+
+        cache->state = ARP_CACHE_STATE_INCOMPLETE;
+        cache->pa = pa;
+        gettimeofday(&cache->timestamp, NULL);
+
         mutex_unlock(&mutex);
-        return ARP_RESOLVE_ERROR;
+
+        arp_request(iface, pa);
+        return ARP_RESOLVE_INCOMPLETE;
     }
+
+    if (cache->state == ARP_CACHE_STATE_INCOMPLETE)
+    {
+        mutex_unlock(&mutex);
+        arp_request(iface, pa);
+        return ARP_RESOLVE_INCOMPLETE;
+    }
+
     memcpy(ha, cache->ha, ETHER_ADDR_LEN);
     mutex_unlock(&mutex);
 
@@ -299,7 +339,11 @@ arp_input(const uint8_t *data, size_t len, struct net_device *dev)
             arp_cache_insert(spa, msg->sha);
             mutex_unlock(&mutex);
         }
-        arp_reply(iface, msg->sha, spa, msg->sha);
+
+        if (ntoh16(msg->hdr.op) == ARP_OP_REQUEST)
+        {
+            arp_reply(iface, msg->sha, spa, msg->sha);
+        }
     }
 }
 

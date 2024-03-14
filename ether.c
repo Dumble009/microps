@@ -110,16 +110,18 @@ int ether_input_helper(struct net_device *dev, ether_input_func_t callback)
     }
 
     hdr = (struct ether_hdr *)frame;
+    type = ntoh16(hdr->type);
     if (memcmp(dev->addr, hdr->dst, ETHER_ADDR_LEN) != 0)
     {
         if (memcmp(ETHER_ADDR_BROADCAST, hdr->dst, ETHER_ADDR_LEN) != 0)
         {
             /* for other host */
+            char buf[ETHER_ADDR_STR_LEN];
+            infof("for other host dst=%s, type=0x%04x", ether_addr_ntop(hdr->dst, buf, ETHER_ADDR_STR_LEN), type);
             return -1;
         }
     }
 
-    type = ntoh16(hdr->type);
     debugf("dev=%s, type=0x%04x, len=%zd", dev->name, type, flen);
     ether_dump(frame, flen);
     return net_input_handler(type, (uint8_t *)(hdr + 1), flen - sizeof(*hdr), dev);

@@ -286,7 +286,7 @@ ip_output_device(struct ip_iface *iface, const uint8_t *data, size_t len, ip_add
         }
         else
         {
-            ret = arp_resolve(iface, dst, hwaddr);
+            ret = arp_resolve((struct net_iface *)iface, dst, hwaddr);
             if (ret != ARP_RESOLVE_FOUND)
             {
                 return ret;
