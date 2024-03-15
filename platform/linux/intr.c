@@ -3,6 +3,8 @@
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
+#include <time.h>
+#include <errno.h>
 
 #include "platform.h"
 
@@ -68,14 +70,41 @@ int intr_raise_irq(unsigned int irq)
     return pthread_kill(tid, (int)irq);
 }
 
+static int
+intr_timer_setup(struct itimerspec *interval)
+{
+    time_t id;
+
+    if (timer_create(CLOCK_REALTIME, NULL, &id) == -1)
+    {
+        errorf("timer_create: %s", strerror(errno));
+        return -1;
+    }
+    if (timer_settime(id, 0, interval, NULL) == -1)
+    {
+        errorf("timer_settime: %s", strerror(errno));
+        return -1;
+    }
+
+    return 0;
+}
+
 static void *
 intr_thread(void *arg)
 {
+    const struct timespec ts = {0, 1000000};
+    struct itimerspec interval = {ts, ts};
+
     int terminate = 0, sig, err;
     struct irq_entry *entry;
 
     debugf("start...");
     pthread_barrier_wait(&barrier);
+    if (intr_timer_setup(&interval) == -1)
+    {
+        errorf("intr_timer_setup failure");
+        return NULL;
+    }
     while (!terminate)
     {
         err = sigwait(&sigmask, &sig);
@@ -91,6 +120,9 @@ intr_thread(void *arg)
             break;
         case SIGUSR1:
             net_softirq_handler();
+            break;
+        case SIGALRM:
+            net_timer_handler();
             break;
         default:
             for (entry = irqs; entry; entry = entry->next)
@@ -143,5 +175,6 @@ int intr_init(void)
     sigemptyset(&sigmask);
     sigaddset(&sigmask, SIGHUP);
     sigaddset(&sigmask, SIGUSR1);
+    sigaddset(&sigmask, SIGALRM);
     return 0;
 }
