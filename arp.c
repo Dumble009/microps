@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdio.h> // NOLINT
 #include <stdint.h>
 #include <string.h>
 #ifndef __USE_MISC
@@ -196,7 +196,7 @@ arp_cache_insert(ip_addr_t pa, const uint8_t *ha)
     memcpy(cache->ha, ha, ETHER_ADDR_STR_LEN);
     cache->pa = pa;
     gettimeofday(&cache->timestamp, NULL);
-    debugf("INSERT: pa=%s, ha=%s", ip_addr_ntop(pa, addr1, sizeof(addr1)), ip_addr_ntop(pa, addr2, sizeof(addr2)));
+    debugf("INSERT: pa=%s, ha=%s", ip_addr_ntop(pa, addr1, sizeof(addr1)), ether_addr_ntop(ha, addr2, sizeof(addr2)));
     return cache;
 }
 
