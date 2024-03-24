@@ -1,11 +1,8 @@
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#ifndef __USE_MISC
-#define __USE_MISC
-#endif
 #include <sys/time.h>
 
 #include "platform.h"

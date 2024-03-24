@@ -46,14 +46,14 @@ ether_tap_addr(struct net_device *dev)
         errorf("socket: %s, dev=%s", strerror(errno), dev->name);
         return -1;
     }
-    strncpy(ifr.ifr_name, PRIV(dev)->name, sizeof(ifr.ifr_name) - 1);
+    strncpy(ifr.ifr_name, PRIV(dev)->name, sizeof(ifr.ifr_name) - 1); // NOLINT
     if (ioctl(soc, SIOCGIFHWADDR, &ifr) == -1)
     {
         errorf("ioctl [SIOCGIFHWADDR]: %s, dev=%s", strerror(errno), dev->name);
         close(soc);
         return -1;
     }
-    memcpy(dev->addr, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+    memcpy(dev->addr, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN); // NOLINT
     close(soc);
     return 0;
 }
@@ -71,7 +71,7 @@ ether_tap_open(struct net_device *dev)
         errorf("open: %s, dev=%s", strerror(errno), dev->name);
         return -1;
     }
-    strncpy(ifr.ifr_name, tap->name, sizeof(ifr.ifr_name) - 1);
+    strncpy(ifr.ifr_name, tap->name, sizeof(ifr.ifr_name) - 1); // NOLINT
     ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
     if (ioctl(tap->fd, TUNSETIFF, &ifr) == -1)
     {
@@ -117,6 +117,7 @@ ether_tap_open(struct net_device *dev)
 static int
 ether_tap_close(struct net_device *dev)
 {
+    return 0;
 }
 
 static ssize_t
@@ -213,7 +214,7 @@ ether_tap_init(const char *name, const char *addr)
         errorf("memory_alloc() failure");
         return NULL;
     }
-    strncpy(tap->name, name, sizeof(tap->name) - 1);
+    strncpy(tap->name, name, sizeof(tap->name) - 1); // NOLINT
     tap->fd = -1;
     tap->irq = ETHER_TAP_IRQ;
     dev->priv = tap;

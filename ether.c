@@ -53,7 +53,7 @@ ether_addr_ntop(const uint8_t *n, char *p, size_t size)
     {
         return NULL;
     }
-    snprintf(p, size, "%02x:%02x:%02x:%02x:%02x:%02x", n[0], n[1], n[2], n[3], n[4], n[5]);
+    snprintf(p, size, "%02x:%02x:%02x:%02x:%02x:%02x", n[0], n[1], n[2], n[3], n[4], n[5]); // NOLINT
     return p;
 }
 
@@ -81,10 +81,10 @@ int ether_transmit_helper(struct net_device *dev, uint16_t type, const uint8_t *
     size_t flen, pad = 0;
 
     hdr = (struct ether_hdr *)frame;
-    memcpy(hdr->dst, dst, ETHER_ADDR_LEN);
-    memcpy(hdr->src, dev->addr, ETHER_ADDR_LEN);
+    memcpy(hdr->dst, dst, ETHER_ADDR_LEN);       // NOLINT
+    memcpy(hdr->src, dev->addr, ETHER_ADDR_LEN); // NOLINT
     hdr->type = hton16(type);
-    memcpy(hdr + 1, data, len);
+    memcpy(hdr + 1, data, len); // NOLINT
     if (len < ETHER_PAYLOAD_SIZE_MIN)
     {
         pad = ETHER_PAYLOAD_SIZE_MIN - len;
@@ -134,5 +134,5 @@ void ether_setup_helper(struct net_device *dev)
     dev->flags = (NET_DEVICE_FLAG_BROADCAST | NET_DEVICE_FLAG_NEED_ARP);
     dev->hlen = ETHER_HDR_SIZE;
     dev->alen = ETHER_ADDR_LEN;
-    memcpy(dev->broadcast, ETHER_ADDR_BROADCAST, ETHER_ADDR_LEN);
+    memcpy(dev->broadcast, ETHER_ADDR_BROADCAST, ETHER_ADDR_LEN); // NOLINT
 }
