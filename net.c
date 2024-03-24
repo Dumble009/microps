@@ -1,3 +1,4 @@
+#define _BSD_SOURCE
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -39,10 +40,18 @@ struct net_timer
     void (*handler)(void);
 };
 
+struct net_event
+{
+    struct net_event *next;
+    void (*handler)(void *arg);
+    void *arg;
+};
+
 /* NOTE: if you want to add/delete the entries after net_run(), you need to protect these lists with a mutex. */
 static struct net_device *devices;
 static struct net_protocol *protocols;
 static struct net_timer *timers;
+static struct net_event *events;
 
 struct net_device *
 net_device_alloc(void)
@@ -65,7 +74,7 @@ int net_device_register(struct net_device *dev)
     static unsigned int index = 0;
 
     dev->index = index++;
-    snprintf(dev->name, sizeof(dev->name), "net%d", dev->index);
+    snprintf(dev->name, sizeof(dev->name), "net%d", dev->index); // NOLINT
     dev->next = devices;
     devices = dev;
     infof("registered, dev=%s, type=0x%04x", dev->name, dev->type);
@@ -253,7 +262,7 @@ int net_input_handler(uint16_t type, const uint8_t *data, size_t len, struct net
             }
             entry->dev = dev;
             entry->len = len;
-            memcpy(entry->data, data, len);
+            memcpy(entry->data, data, len); // NOLINT
             if (!queue_push(&proto->queue, entry))
             {
                 errorf("queue_push() failure");
@@ -290,6 +299,45 @@ int net_softirq_handler(void)
             memory_free(entry);
         }
     }
+
+    return 0;
+}
+
+/* NOTE: must not be call after net_run() */
+int net_event_subscribe(void (*handler)(void *arg), void *arg)
+{
+    struct net_event *event;
+
+    event = memory_alloc(sizeof(*event));
+    if (!event)
+    {
+        errorf("memory_alloc() failure");
+        return -1;
+    }
+
+    event->handler = handler;
+    event->arg = arg;
+    event->next = events;
+    events = event;
+
+    return 0;
+}
+
+int net_event_handler(void)
+{
+    struct net_event *event;
+
+    for (event = events; event; event = event->next)
+    {
+        event->handler(event->arg);
+    }
+
+    return 0;
+}
+
+void net_raise_event()
+{
+    intr_raise_irq(INTR_IRQ_EVENT);
 }
 
 int net_run(void)

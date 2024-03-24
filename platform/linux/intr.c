@@ -55,7 +55,7 @@ int intr_request_irq(unsigned int irq, int (*handler)(unsigned int irq, void *de
     entry->irq = irq;
     entry->handler = handler;
     entry->flags = flags;
-    strncpy(entry->name, name, sizeof(entry->name) - 1);
+    strncpy(entry->name, name, sizeof(entry->name) - 1); // NOLINT
     entry->dev = dev;
     entry->next = irqs;
     irqs = entry;
@@ -73,7 +73,7 @@ int intr_raise_irq(unsigned int irq)
 static int
 intr_timer_setup(struct itimerspec *interval)
 {
-    time_t id;
+    timer_t id;
 
     if (timer_create(CLOCK_REALTIME, NULL, &id) == -1)
     {
@@ -120,6 +120,9 @@ intr_thread(void *arg)
             break;
         case SIGUSR1:
             net_softirq_handler();
+            break;
+        case SIGUSR2:
+            net_event_handler();
             break;
         case SIGALRM:
             net_timer_handler();
@@ -175,6 +178,7 @@ int intr_init(void)
     sigemptyset(&sigmask);
     sigaddset(&sigmask, SIGHUP);
     sigaddset(&sigmask, SIGUSR1);
+    sigaddset(&sigmask, SIGUSR2);
     sigaddset(&sigmask, SIGALRM);
     return 0;
 }
