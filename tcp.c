@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
-#ifndef __USE_MISC
-#define __USE_MISC
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -550,10 +547,10 @@ tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags, uint8_t *data, 
         // 何かデータを含んでいるか？
         if (len)
         {
-            memcpy(pcb->buf + (sizeof(pcb->buf) - pcb->rcv.wnd), data, len);
-            pcb->rcv.nxt = seg->seq + seg->len;    // 次に期待するシーケンス番号を更新する
-            pcb->rcv.wnd -= len;                   // データを格納した分だけウインドウサイズを縮める
-            tcp_output(pcb, TCP_FLG_ACK, NULL, 0); // 確認応答を送信
+            memcpy(pcb->buf + (sizeof(pcb->buf) - pcb->rcv.wnd), data, len); // NOLINT
+            pcb->rcv.nxt = seg->seq + seg->len;                              // 次に期待するシーケンス番号を更新する
+            pcb->rcv.wnd -= len;                                             // データを格納した分だけウインドウサイズを縮める
+            tcp_output(pcb, TCP_FLG_ACK, NULL, 0);                           // 確認応答を送信
             sched_wakeup(&pcb->ctx);
         }
         break;
@@ -875,8 +872,8 @@ RETRY:
     }
 
     len = MIN(size, remain);
-    memcpy(buf, pcb->buf, len);
-    memmove(pcb->buf, pcb->buf + len, remain - len);
+    memcpy(buf, pcb->buf, len);                      // NOLINT
+    memmove(pcb->buf, pcb->buf + len, remain - len); // NOLINT
     pcb->rcv.wnd += len;
     mutex_unlock(&mutex);
     return len;

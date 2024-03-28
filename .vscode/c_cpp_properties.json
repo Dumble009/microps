@@ -7,7 +7,7 @@
             ],
             "compilerPath": "/usr/bin/gcc",
             "compilerArgs": ["-g", "-W", "-Wall", "-Wno-unused-parameter", "-iquote", ".", "-pthread", "-iquote", "platform/linux"],
-            "cStandard": "c17",
+            "cStandard": "gnu17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",
             "configurationProvider": "ms-vscode.cpptools"

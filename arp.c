@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#ifndef __USE_MISC
-#define __USE_MISC
-#endif
 #include <sys/time.h>
 
 #include "platform.h"
@@ -87,10 +84,10 @@ arp_dump(const uint8_t *data, size_t len)
     fprintf(stderr, "   pln: %u\n", message->hdr.pln);
     fprintf(stderr, "    op: %u (%s)\n", ntoh16(message->hdr.op), arp_opcode_ntoa(message->hdr.op));
     fprintf(stderr, "   sha: %s\n", ether_addr_ntop(message->sha, addr, sizeof(addr)));
-    memcpy(&spa, message->spa, sizeof(spa));
+    memcpy(&spa, message->spa, sizeof(spa)); // NOLINT
     fprintf(stderr, "   spa: %s\n", ip_addr_ntop(spa, addr, sizeof(addr)));
     fprintf(stderr, "   tha: %s\n", ether_addr_ntop(message->tha, addr, sizeof(addr)));
-    memcpy(&tpa, message->tpa, sizeof(tpa));
+    memcpy(&tpa, message->tpa, sizeof(tpa)); // NOLINT
     fprintf(stderr, "   tpa: %s\n", ip_addr_ntop(tpa, addr, sizeof(addr)));
 #ifdef HEXDUMP
     hexdump(stderr, data, len);
@@ -113,7 +110,7 @@ arp_cache_delete(struct arp_cache *cache)
     debugf("DELETE: pa=%s, ha=%s", ip_addr_ntop(cache->pa, addr1, sizeof(addr1)), ether_addr_ntop(cache->ha, addr2, sizeof(addr2)));
 
     cache->state = ARP_CACHE_STATE_FREE;
-    memset(cache->ha, 0, ETHER_ADDR_LEN);
+    memset(cache->ha, 0, ETHER_ADDR_LEN); // NOLINT
     cache->pa = 0;
     timerclear(&cache->timestamp);
 }
@@ -171,7 +168,7 @@ arp_cache_update(ip_addr_t pa, const uint8_t *ha)
     }
 
     cache->state = ARP_CACHE_STATE_RESOLVED;
-    memcpy(cache->ha, ha, ETHER_ADDR_STR_LEN);
+    memcpy(cache->ha, ha, ETHER_ADDR_STR_LEN); // NOLINT
     cache->pa = pa;
     gettimeofday(&cache->timestamp, NULL);
     debugf("UPDATE: pa=%s, ha=%s", ip_addr_ntop(pa, addr1, sizeof(addr1)), ether_addr_ntop(ha, addr2, sizeof(addr2)));
@@ -193,7 +190,7 @@ arp_cache_insert(ip_addr_t pa, const uint8_t *ha)
     }
 
     cache->state = ARP_CACHE_STATE_RESOLVED;
-    memcpy(cache->ha, ha, ETHER_ADDR_STR_LEN);
+    memcpy(cache->ha, ha, ETHER_ADDR_STR_LEN); // NOLINT
     cache->pa = pa;
     gettimeofday(&cache->timestamp, NULL);
     debugf("INSERT: pa=%s, ha=%s", ip_addr_ntop(pa, addr1, sizeof(addr1)), ether_addr_ntop(ha, addr2, sizeof(addr2)));
@@ -210,10 +207,10 @@ arp_request(struct net_iface *iface, ip_addr_t tpa)
     request.hdr.pln = IP_ADDR_LEN;
     request.hdr.op = hton16(ARP_OP_REQUEST);
 
-    memcpy(request.sha, iface->dev->addr, ETHER_ADDR_LEN);
-    memcpy(request.spa, &((struct ip_iface *)iface)->unicast, IP_ADDR_LEN);
-    memset(request.tha, 0, ETHER_ADDR_LEN);
-    memcpy(request.tpa, &tpa, IP_ADDR_LEN);
+    memcpy(request.sha, iface->dev->addr, ETHER_ADDR_LEN);                  // NOLINT
+    memcpy(request.spa, &((struct ip_iface *)iface)->unicast, IP_ADDR_LEN); // NOLINT
+    memset(request.tha, 0, ETHER_ADDR_LEN);                                 // NOLINT
+    memcpy(request.tpa, &tpa, IP_ADDR_LEN);                                 // NOLINT
 
     debugf("dev=%s, len=%zu", iface->dev->name, sizeof(request));
     arp_dump((uint8_t *)&request, sizeof(request));
@@ -232,10 +229,12 @@ arp_reply(struct net_iface *iface, const uint8_t *tha, ip_addr_t tpa, const uint
     reply.hdr.pln = IP_ADDR_LEN;
     reply.hdr.op = hton16(ARP_OP_REPLY);
 
+    // NOLINTBEGIN
     memcpy(reply.sha, iface->dev->addr, ETHER_ADDR_LEN);
     memcpy(reply.spa, &((struct ip_iface *)iface)->unicast, IP_ADDR_LEN);
     memcpy(reply.tha, tha, ETHER_ADDR_LEN);
     memcpy(reply.tpa, &tpa, IP_ADDR_LEN);
+    // NOLINTEND
 
     debugf("dev=%s, len=%zu", iface->dev->name, sizeof(reply));
     arp_dump((uint8_t *)&reply, sizeof(reply));
@@ -290,7 +289,7 @@ int arp_resolve(struct net_iface *iface, ip_addr_t pa, uint8_t *ha)
         return ARP_RESOLVE_INCOMPLETE;
     }
 
-    memcpy(ha, cache->ha, ETHER_ADDR_LEN);
+    memcpy(ha, cache->ha, ETHER_ADDR_LEN); // NOLINT
     mutex_unlock(&mutex);
 
     debugf("resolved, pa=%s, ha=%s", ip_addr_ntop(pa, addr1, sizeof(addr1)), ether_addr_ntop(ha, addr2, sizeof(addr2)));
@@ -323,8 +322,8 @@ arp_input(const uint8_t *data, size_t len, struct net_device *dev)
 
     debugf("dev=%s, len=%zu", dev->name, len);
     arp_dump(data, len);
-    memcpy(&spa, msg->spa, sizeof(spa));
-    memcpy(&tpa, msg->tpa, sizeof(tpa));
+    memcpy(&spa, msg->spa, sizeof(spa)); // NOLINT
+    memcpy(&tpa, msg->tpa, sizeof(tpa)); // NOLINT
     mutex_lock(&mutex);
     if (arp_cache_update(spa, msg->sha))
     {
