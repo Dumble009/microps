@@ -5,7 +5,6 @@
             "includePath": [
                 "${workspaceFolder}/**"
             ],
-            "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "compilerArgs": ["-g", "-W", "-Wall", "-Wno-unused-parameter", "-iquote", ".", "-pthread", "-iquote", "platform/linux"],
             "cStandard": "c17",

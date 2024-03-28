@@ -1,4 +1,4 @@
-#include <stdio.h> // NOLINT
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #ifndef __USE_MISC
